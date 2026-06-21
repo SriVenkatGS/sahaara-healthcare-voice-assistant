@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sahaara — Healthcare Aid</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #EDF5EF;
+      --surface:   #FFFFFF;
+      --border:    #C9DDD0;
+      --text:      #1A2E22;
+      --muted:     #7A9E86;
+      --accent:    #2D6A4F;
+      --soft:      #52B788;
+      --shadow:    rgba(45,106,79,0.16);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 20px 32px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .brand-name { font-size: 1.15rem; font-weight: 700; color: var(--accent); letter-spacing: 0.01em; }
+    .brand-sub  { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.07em; text-transform: uppercase; margin-top: 2px; }
+    .byline     { font-size: 1.26rem; color: var(--muted); letter-spacing: 0.02em; padding-top: 2px; }
+
+    /* ── Main two-column layout ── */
+    .main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      overflow: hidden;
+    }
+
+    /* ── Left: Orb panel ── */
+    .orb-panel {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      padding: 32px;
+      user-select: none;
+      caret-color: transparent;
+    }
+    .orb-wrap:focus { outline: none; }
+
+    .about {
+      position: absolute;
+      top: 28px;
+      left: 32px;
+      max-width: 320px;
+    }
+    .about-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+      margin-bottom: 7px;
+    }
+    .about-text {
+      font-size: 0.78rem;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    /* Orb wrapper */
+    .orb-wrap {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .orb-wrap:active { transform: scale(0.98); }
+
+    /* Halo rings */
+    .halo {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid var(--soft);
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    /* Pearl / marble orb */
+    .orb {
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      position: relative;
+      z-index: 1;
+      background:
+        radial-gradient(ellipse at 31% 26%, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0) 36%),
+        radial-gradient(ellipse at 66% 70%, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0) 30%),
+        radial-gradient(ellipse at 54% 16%, rgba(220,242,230,0.55) 0%, rgba(220,242,230,0) 26%),
+        radial-gradient(circle at 48% 52%, #D0EDDA, #74C69D 36%, #40916C 64%, #1B4332);
+      box-shadow:
+        0 8px 40px rgba(45,106,79,0.22),
+        0 2px 8px rgba(45,106,79,0.12),
+        inset 0 2px 8px rgba(255,255,255,0.55),
+        inset 0 -3px 10px rgba(27,67,50,0.28);
+      transition: box-shadow 0.5s ease, transform 0.2s ease;
+      pointer-events: none;
+    }
+    .orb::before {
+      content: '';
+      position: absolute;
+      top: 10%; left: 14%;
+      width: 28%; height: 20%;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.72);
+      filter: blur(5px);
+      z-index: 2;
+    }
+    .orb::after {
+      content: '';
+      position: absolute;
+      bottom: 13%; right: 14%;
+      width: 18%; height: 12%;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.28);
+      filter: blur(6px);
+      z-index: 2;
+    }
+
+    /* Waveform */
+    .wave-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      height: 28px;
+      opacity: 0;
+      transition: opacity 0.35s;
+    }
+    .wave-row.visible { opacity: 1; }
+    .wbar { width: 3px; border-radius: 3px; background: var(--accent); transform-origin: center; }
+    .wbar:nth-child(1) { height: 8px; }  .wbar:nth-child(2) { height: 16px; }
+    .wbar:nth-child(3) { height: 22px; } .wbar:nth-child(4) { height: 14px; }
+    .wbar:nth-child(5) { height: 26px; } .wbar:nth-child(6) { height: 18px; }
+    .wbar:nth-child(7) { height: 11px; } .wbar:nth-child(8) { height: 20px; }
+    .wbar:nth-child(9) { height: 9px; }
+    .wbar.anim { animation: wave-anim 0.65s ease-in-out infinite alternate; }
+    .wbar:nth-child(2).anim { animation-delay: 0.08s; } .wbar:nth-child(3).anim { animation-delay: 0.16s; }
+    .wbar:nth-child(4).anim { animation-delay: 0.05s; } .wbar:nth-child(5).anim { animation-delay: 0.13s; }
+    .wbar:nth-child(6).anim { animation-delay: 0.20s; } .wbar:nth-child(7).anim { animation-delay: 0.09s; }
+    .wbar:nth-child(8).anim { animation-delay: 0.15s; } .wbar:nth-child(9).anim { animation-delay: 0.04s; }
+    @keyframes wave-anim {
+      0%   { transform: scaleY(0.2); opacity: 0.45; }
+      100% { transform: scaleY(1);   opacity: 1; }
+    }
+
+    /* State label + hint */
+    .state-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: center;
+    }
+    .orb-hint {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+      transition: opacity 0.4s;
+    }
+
+    /* ── Orb state animations ── */
+    .orb.idle {
+      animation: idle-breathe 5s ease-in-out infinite;
+    }
+    @keyframes idle-breathe {
+      0%, 100% { transform: scale(1);    box-shadow: 0 8px 40px rgba(45,106,79,0.20), inset 0 2px 8px rgba(255,255,255,0.55), inset 0 -3px 10px rgba(27,67,50,0.28); }
+      50%       { transform: scale(1.03); box-shadow: 0 12px 56px rgba(45,106,79,0.32), inset 0 2px 8px rgba(255,255,255,0.55), inset 0 -3px 10px rgba(27,67,50,0.28); }
+    }
+    .orb.listening {
+      animation: listen-swell 1.5s ease-in-out infinite;
+    }
+    @keyframes listen-swell {
+      0%, 100% { transform: scale(1);    box-shadow: 0 8px 36px rgba(82,183,136,0.35), inset 0 2px 8px rgba(255,255,255,0.55), inset 0 -3px 10px rgba(27,67,50,0.28); }
+      50%       { transform: scale(1.07); box-shadow: 0 12px 60px rgba(82,183,136,0.6), inset 0 2px 8px rgba(255,255,255,0.55), inset 0 -3px 10px rgba(27,67,50,0.28); }
+    }
+    .orb-wrap.listening .halo { animation: halo-expand 2.2s ease-out infinite; }
+    .orb-wrap.listening .halo:nth-child(2) { animation-delay: 0.73s; }
+    .orb-wrap.listening .halo:nth-child(3) { animation-delay: 1.46s; }
+    @keyframes halo-expand {
+      0%   { transform: scale(1);    opacity: 0.45; }
+      100% { transform: scale(1.9);  opacity: 0; }
+    }
+    .orb.thinking {
+      animation: thinking-shift 2.2s ease-in-out infinite;
+    }
+    @keyframes thinking-shift {
+      0%, 100% { filter: brightness(0.9) saturate(0.85); }
+      50%       { filter: brightness(1.1) saturate(1.1); }
+    }
+    .orb.speaking {
+      animation: speak-ripple 0.85s ease-in-out infinite;
+    }
+    @keyframes speak-ripple {
+      0%, 100% { transform: scale(1); }
+      35%       { transform: scale(1.06); }
+      70%       { transform: scale(1.02); }
+    }
+
+    /* ── Right: Conversation panel ── */
+    .conv-panel {
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .conv-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .conv-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 16px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .conv-scroll::-webkit-scrollbar { width: 4px; }
+    .conv-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .bubble {
+      max-width: 88%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 0.85rem;
+      line-height: 1.65;
+      word-wrap: break-word;
+    }
+    .bubble.user {
+      align-self: flex-end;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: #3D5A4A;
+      border-bottom-right-radius: 4px;
+    }
+    .bubble.assistant {
+      align-self: flex-start;
+      background: var(--accent);
+      color: #F0FAF4;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 2px 8px rgba(45,106,79,0.15);
+    }
+
+    /* Per-message latency line under an assistant bubble */
+    .latency {
+      align-self: flex-start;
+      display: flex;
+      gap: 12px;
+      margin: -4px 0 4px 4px;
+      font-size: 0.62rem;
+      color: var(--muted);
+      letter-spacing: 0.03em;
+    }
+    .latency b { font-weight: 600; color: #5C8A6F; }
+
+    /* End-of-call summary card */
+    .summary {
+      align-self: stretch;
+      margin: 12px 4px 4px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg);
+    }
+    .summary-title {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text);
+      padding: 3px 0;
+    }
+    .summary-row span:last-child { font-weight: 600; color: var(--accent); }
+    .listening-bubble {
+      align-self: flex-end;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 11px 15px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      border-bottom-right-radius: 4px;
+    }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: dot-bounce 1.3s infinite ease-in-out; }
+    .dot:nth-child(2) { animation-delay: 0.22s; }
+    .dot:nth-child(3) { animation-delay: 0.44s; }
+    @keyframes dot-bounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.35; }
+      40%           { transform: scale(1);   opacity: 1; }
+    }
+
+    /* Empty state */
+    .conv-empty {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--border);
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      padding: 32px;
+      text-align: center;
+    }
+
+    /* ── Footer ── */
+    footer {
+      padding: 10px 32px;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 0.62rem;
+      color: var(--muted);
+      text-align: center;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <div class="brand-name">Sahaara</div>
+      <div class="brand-sub">Healthcare Aid Assistant</div>
+    </div>
+    <div class="byline">Built by Sri Venkat</div>
+  </header>
+
+  <div class="main">
+
+    <!-- Left: orb -->
+    <div class="orb-panel">
+      <div class="about">
+        <p class="about-title">What Sahaara does</p>
+        <p class="about-text">Sahaara listens to your symptoms or general health questions and gives a calm, plain-language sense of how urgent things might be and what to do next. It may ask a question or two first. It does not diagnose or prescribe — for that, please see a doctor.</p>
+      </div>
+
+      <div class="orb-wrap" id="orbWrap">
+        <div class="halo"></div>
+        <div class="halo"></div>
+        <div class="halo"></div>
+        <div class="orb idle" id="orb"></div>
+      </div>
+
+      <div class="wave-row" id="waveRow">
+        <div class="wbar"></div><div class="wbar"></div><div class="wbar"></div>
+        <div class="wbar"></div><div class="wbar"></div><div class="wbar"></div>
+        <div class="wbar"></div><div class="wbar"></div><div class="wbar"></div>
+      </div>
+
+      <p class="state-label" id="stateLabel"></p>
+      <p class="orb-hint"   id="orbHint">Click to begin your conversation</p>
+    </div>
+
+    <!-- Right: conversation -->
+    <div class="conv-panel">
+      <div class="conv-header">Conversation</div>
+      <div class="conv-scroll" id="convScroll">
+        <div class="conv-empty" id="convEmpty">Your conversation will appear here</div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>Sahaara is not a doctor. For emergencies, call 108 or 112, or go to the nearest ER.</footer>
+
+  <script>
+    const orb        = document.getElementById('orb');
+    const orbWrap    = document.getElementById('orbWrap');
+    const waveRow    = document.getElementById('waveRow');
+    const stateLabel = document.getElementById('stateLabel');
+    const orbHint    = document.getElementById('orbHint');
+    const convScroll = document.getElementById('convScroll');
+    const convEmpty  = document.getElementById('convEmpty');
+
+    const audioCtx = new AudioContext();
+    let ws, mediaRecorder, stream, listeningBubble;
+    const selectedVoice = 'priya';
+    let pendingAudio  = 0;
+    let nextStartTime = 0;
+    let connected     = false;
+    let silenceInterval = null;
+    let currentState  = 'idle';
+    let turnComplete  = false;
+    let lastAssistantBubble = null;
+    let latencies = { stt: [], text: [], voice: [] };  // per-call, in memory only
+
+    /* ── State machine ── */
+    const STATE_META = {
+      idle:      { orb: 'idle',      halo: false, wave: false, label: '',          hint: 'Click the orb to begin your conversation' },
+      listening: { orb: 'listening', halo: true,  wave: false, label: 'Listening', hint: 'Click the orb to end the conversation' },
+      thinking:  { orb: 'thinking',  halo: false, wave: false, label: 'Thinking',  hint: 'Click the orb to end the conversation' },
+      speaking:  { orb: 'speaking',  halo: false, wave: true,  label: 'Speaking',  hint: 'Click the orb to end the conversation' },
+    };
+
+    function setState(name) {
+      currentState = name;
+      const s = STATE_META[name];
+      orb.className = `orb ${s.orb}`;
+      orbWrap.className = `orb-wrap ${s.halo ? 'listening' : ''}`;
+      waveRow.classList.toggle('visible', s.wave);
+      document.querySelectorAll('.wbar').forEach(b => b.classList.toggle('anim', s.wave));
+      stateLabel.textContent = s.label;
+      orbHint.textContent    = s.hint;
+    }
+
+    /* ── Audio playback ──
+       Sentence chunks arrive over time, so we can't assume the turn is done just
+       because the queue emptied. We only re-open the mic once the server has sent
+       TURN_END (turnComplete) AND all scheduled audio has finished playing. */
+    let activeSources = [];
+
+    async function enqueueAudio(arrayBuffer) {
+      pendingAudio++;
+      setState('speaking');
+      try {
+        const decoded = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+        const src = audioCtx.createBufferSource();
+        src.buffer = decoded;
+        src.connect(audioCtx.destination);
+        const startAt = Math.max(audioCtx.currentTime, nextStartTime);
+        src.start(startAt);
+        nextStartTime = startAt + decoded.duration;
+        activeSources.push(src);
+        src.onended = () => {
+          activeSources = activeSources.filter(s => s !== src);
+          pendingAudio = Math.max(0, pendingAudio - 1);
+          maybeFinishTurn();
+        };
+      } catch (e) {
+        pendingAudio = Math.max(0, pendingAudio - 1);
+        console.error('Audio decode error:', e);
+        maybeFinishTurn();
+      }
+    }
+
+    function maybeFinishTurn() {
+      if (turnComplete && pendingAudio === 0) {
+        nextStartTime = 0;
+        startListening(); // hand the turn back to the user
+      }
+    }
+
+    function stopAllAudio() {
+      // Detach onended FIRST so stopped sources don't fire and corrupt pendingAudio.
+      activeSources.forEach(s => { s.onended = null; try { s.stop(); } catch (_) {} });
+      activeSources = [];
+      pendingAudio = 0;
+      nextStartTime = 0;
+    }
+
+    /* ── Silence detection (VAD) ── */
+    function startSilenceDetection(micStream) {
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;
+      const src = audioCtx.createMediaStreamSource(micStream);
+      src.connect(analyser);
+      const buf = new Uint8Array(analyser.frequencyBinCount);
+
+      let silenceStart = null;
+      let speechSeen   = false;
+      const THRESHOLD   = 9;    // RMS level (0-128 scale)
+      const MIN_MS      = 500;  // must record at least this long before auto-stopping
+      const SILENCE_MS  = 1100; // ms of silence after speech to trigger stop
+      const startedAt   = Date.now();
+
+      silenceInterval = setInterval(() => {
+        analyser.getByteTimeDomainData(buf);
+        const rms = Math.sqrt(buf.reduce((s, v) => s + (v - 128) ** 2, 0) / buf.length);
+
+        if (rms > THRESHOLD) {
+          speechSeen   = true;
+          silenceStart = null;
+        } else if (speechSeen && (Date.now() - startedAt) > MIN_MS) {
+          if (!silenceStart) silenceStart = Date.now();
+          else if (Date.now() - silenceStart > SILENCE_MS) {
+            stopRecording();
+          }
+        }
+      }, 80);
+    }
+
+    function stopRecording() {
+      if (silenceInterval) { clearInterval(silenceInterval); silenceInterval = null; }
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        stream.getTracks().forEach(t => t.stop());
+      }
+    }
+
+    /* ── Start listening ── */
+    async function startListening() {
+      // Only bail if disconnected or a recording is already in progress.
+      if (!connected || currentState === 'listening') return;
+      if (mediaRecorder && mediaRecorder.state === 'recording') return;
+      await audioCtx.resume();
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+        });
+      } catch (e) {
+        console.error('Mic access denied', e);
+        return;
+      }
+
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0 && ws.readyState === WebSocket.OPEN) ws.send(e.data);
+      };
+      mediaRecorder.onstop = () => {
+        turnComplete = false; // a fresh response is on the way
+        ws.send('END_OF_SPEECH');
+        setState('thinking');
+      };
+
+      mediaRecorder.start(250);
+      showListeningBubble();
+      setState('listening');
+      startSilenceDetection(stream);
+    }
+
+    /* ── Orb click: start a conversation, or end the one in progress ── */
+    orbWrap.onclick = () => {
+      if (!connected) startConversation();
+      else            endConversation();
+    };
+
+    function startConversation() {
+      convScroll.querySelectorAll('.bubble, .listening-bubble, .latency, .summary').forEach(el => el.remove());
+      convEmpty.style.display = '';
+      turnComplete = false;
+      lastAssistantBubble = null;
+      latencies = { stt: [], text: [], voice: [] };
+
+      ws = new WebSocket(`ws://localhost:8000/ws?voice=${selectedVoice}`);
+      ws.binaryType = 'arraybuffer';
+
+      ws.onopen = () => {
+        connected = true;
+        setState('thinking');
+        ws.send('START_CONVERSATION');
+      };
+
+      ws.onmessage = (e) => {
+        if (e.data instanceof ArrayBuffer) {
+          enqueueAudio(e.data);
+        } else if (e.data === 'TURN_END') {
+          turnComplete = true;
+          maybeFinishTurn(); // in case all audio already finished before the marker
+        } else if (e.data.startsWith('METRICS:')) {
+          handleMetrics(JSON.parse(e.data.slice(8)));
+        } else if (e.data.startsWith('USER:')) {
+          replaceListeningBubble(e.data.slice(5));
+          setState('thinking');
+        } else if (e.data.startsWith('ASSISTANT:')) {
+          lastAssistantBubble = addBubble(e.data.slice(10), 'assistant');
+        }
+      };
+
+      ws.onclose = () => {
+        connected = false;
+        stopRecording();
+        stopAllAudio();
+        if (listeningBubble) { listeningBubble.remove(); listeningBubble = null; }
+        setState('idle');
+      };
+    }
+
+    function endConversation() {
+      stopRecording();
+      stopAllAudio();
+      if (listeningBubble) { listeningBubble.remove(); listeningBubble = null; }
+      if (ws) ws.close();
+      setState('idle');
+      showSummary();
+    }
+
+    /* ── Bubbles ── */
+    function addBubble(text, role) {
+      convEmpty.style.display = 'none';
+      const el = document.createElement('div');
+      el.className = `bubble ${role}`;
+      el.textContent = text;
+      convScroll.appendChild(el);
+      el.scrollIntoView({ behavior: 'smooth' });
+      return el;
+    }
+
+    /* ── Latency: per-message line + accumulate for the call average ── */
+    function handleMetrics(m) {
+      latencies.stt.push(m.stt);
+      latencies.text.push(m.text);
+      latencies.voice.push(m.voice);
+
+      const line = document.createElement('div');
+      line.className = 'latency';
+      line.innerHTML = `<span>Text <b>${m.text} ms</b></span><span>Voice <b>${m.voice} ms</b></span>`;
+      if (lastAssistantBubble && lastAssistantBubble.nextSibling) {
+        convScroll.insertBefore(line, lastAssistantBubble.nextSibling);
+      } else {
+        convScroll.appendChild(line);
+      }
+      line.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function avg(arr) {
+      if (!arr.length) return null;
+      return Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
+    }
+
+    function showSummary() {
+      if (!latencies.text.length) return; // no completed turns
+      const card = document.createElement('div');
+      card.className = 'summary';
+      const row = (label, val) => `<div class="summary-row"><span>${label}</span><span>${val} ms</span></div>`;
+      card.innerHTML =
+        '<div class="summary-title">Call summary — average latencies</div>' +
+        row('Text (LLM)', avg(latencies.text)) +
+        row('Speech-to-text', avg(latencies.stt)) +
+        row('Text-to-speech', avg(latencies.voice));
+      convScroll.appendChild(card);
+      card.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showListeningBubble() {
+      convEmpty.style.display = 'none';
+      listeningBubble = document.createElement('div');
+      listeningBubble.className = 'listening-bubble';
+      listeningBubble.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+      convScroll.appendChild(listeningBubble);
+      listeningBubble.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function replaceListeningBubble(text) {
+      if (listeningBubble) {
+        listeningBubble.className = 'bubble user';
+        listeningBubble.textContent = text;
+        listeningBubble.scrollIntoView({ behavior: 'smooth' });
+        listeningBubble = null;
+      }
+    }
+  </script>
+</body>
+</html>
