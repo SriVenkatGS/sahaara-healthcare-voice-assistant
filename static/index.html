@@ -505,7 +505,7 @@
       let speechSeen   = false;
       const THRESHOLD   = 9;    // RMS level (0-128 scale)
       const MIN_MS      = 500;  // must record at least this long before auto-stopping
-      const SILENCE_MS  = 1100; // ms of silence after speech to trigger stop
+      const SILENCE_MS  = 1700; // ms of silence after speech to trigger stop
       const startedAt   = Date.now();
 
       silenceInterval = setInterval(() => {
